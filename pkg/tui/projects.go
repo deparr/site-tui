@@ -1,44 +1,18 @@
 package tui
 
 import (
-	"context"
-	"slices"
+	"log/slog"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/deparr/portfolio/go/pkg/resource"
-	"github.com/google/go-github/v67/github"
+	apimodel "github.com/deparr/api/pkg/model"
+	"github.com/deparr/portfolio/go/pkg/client"
 )
 
-type language struct {
-	name    string
-	color   string
-	percent int
-}
-
-type Project struct {
-	name     string
-	repoUrl  string
-	language []language
-	stars    int
-	desc     string
-}
-
-const (
-	defaultLangColor = "#a5a8a6"
-)
-
-var (
-	toget = []string{
-		"chip8",
-		"cs330",
-		"portfolio",
-	}
-	projects []Project
-	loadedProj   = false
-)
+var pinnedRepos []apimodel.Repository
+var recentRepos []apimodel.Repository
 
 func (m model) projectsSwitch() (model, tea.Cmd) {
 	m = m.switchPage(projectsPage)
@@ -51,22 +25,36 @@ func (m model) projectsUpdate(msg tea.Msg) (model, tea.Cmd) {
 }
 
 func (m model) projectsView() string {
-	if projects == nil || !loadedProj {
-		return lipgloss.PlaceVertical(1, lipgloss.Center, "loading...")
+	// TODO make the ui aware of client errors and show that instead of only `loading...`
+	if pinnedRepos == nil {
+		return lipgloss.PlaceHorizontal(15, lipgloss.Center, lipgloss.PlaceVertical(1, lipgloss.Center, "loading..."))
 	}
 
-	lines := []string{""}
-	header := m.theme.TextAccent().Bold(true).Render
+	// this is not useful at all, don't know what i was thinking
+	// if !client.ApiIsHealthy() {
+	// 	return lipgloss.JoinVertical(
+	// 		lipgloss.Center,
+	// 		"",
+	// 		base("Hmm, looks like something went wrong on the backend."),
+	// 		base("I won't be able to  display recent projects here, try going to the website:"),
+	// 		link(os.Getenv("WEBSITE_URL")),
+	// 		base("or check out my github"),
+	// 		link(os.Getenv("GITHUB_URL")),
+	// 	)
+	// }
+
 	base := m.theme.Base().Width(m.contentWidth).PaddingLeft(4).Render
 	link := m.theme.Base().Faint(true).Width(m.contentWidth).PaddingLeft(4).Render
-	for _, proj := range projects {
+	lines := []string{""}
+	header := m.theme.TextAccent().Bold(true).Render
+	for _, proj := range pinnedRepos {
 		lines = append(lines,
 			lipgloss.JoinVertical(
 				lipgloss.Left,
-				header(proj.name),
-				base(proj.desc),
-				link(proj.repoUrl),
-				"    "+colorBar(proj.language, m.contentWidth-8)+"    ",
+				header(proj.Name),
+				base(proj.Desc),
+				link(proj.Url),
+				"    "+colorBar(proj.Language, m.contentWidth-8)+"    ",
 				"",
 			),
 		)
@@ -75,14 +63,15 @@ func (m model) projectsView() string {
 	return lipgloss.JoinVertical(lipgloss.Left, lines...)
 }
 
-func colorBar(langs []language, width int) string {
+func colorBar(langs apimodel.RepoLangs, width int) string {
 	usedWidth := 0
 	widths := []int{}
 	for _, l := range langs {
-		portionedWidth := max(width*l.percent/100, 1)
-		widths = append(widths, portionedWidth)
-		usedWidth += portionedWidth
+		portioned := l.Percent * width / 100
+		widths = append(widths, portioned)
+		usedWidth += portioned
 	}
+
 
 	leftover := width - usedWidth
 	if leftover != 0 {
@@ -103,12 +92,7 @@ func colorBar(langs []language, width int) string {
 	for i := range langs {
 		w := widths[i]
 		l := langs[i]
-		langColor := defaultLangColor
-		if l.color != "" {
-			langColor = l.color
-		}
-
-		color := lipgloss.AdaptiveColor{Dark: langColor, Light: langColor}
+		color := lipgloss.AdaptiveColor{Dark: l.Color, Light: l.Color}
 		renderedSegment := style.Foreground(color).Render(strings.Repeat("─", w))
 		colorBar = append(colorBar, renderedSegment)
 	}
@@ -117,46 +101,17 @@ func colorBar(langs []language, width int) string {
 	return rendered
 }
 
-func populateProjects() {
-	client := github.NewClient(nil)
-	for _, repo := range toget {
-		repoData, _, err := client.Repositories.Get(context.Background(), "deparr", repo)
-		if err != nil {
-			continue
-		}
-		langData, _, err := client.Repositories.ListLanguages(context.Background(), "deparr", repo)
-		langs := []language{}
-		if err == nil {
-			sizeTotal := 0
-			for l, s := range langData {
-				langs = append(langs, language{name: l, color: resource.LanguageColors[l], percent: s})
-			}
-			slices.SortFunc(langs, func(a language, b language) int {
-				return b.percent - a.percent
-			})
-			if len(langs) > 5 {
-				langs = langs[:5]
-			}
-			for _, l := range langs {
-				sizeTotal += l.percent
-			}
-			for i := range langs {
-				langs[i].percent = langs[i].percent * 100 / sizeTotal
-			}
-		} else {
-			langs = append(langs, language{name: *repoData.Language, color: resource.LanguageColors[*repoData.Language]})
-		}
+func (m model) populateProjects() {
+	newPinned, err := client.GetRepos("pinned")
+	pinnedRepos = newPinned
 
-		projects = append(projects, Project{
-			name:     *repoData.Name,
-			repoUrl:  *repoData.URL,
-			language: langs,
-			stars:    *repoData.StargazersCount,
-			desc:     *repoData.Description,
-		})
+	if err != nil {
+		slog.Error("populating projects:", "err", err)
 	}
 
-	client.Client().CloseIdleConnections()
-	client = nil
-	loadedProj = true
+	// if we're somehow at the projects page before theyre loaded
+	// force a reswitch to show them
+	if m.page == projectsPage {
+		m.projectsSwitch()
+	}
 }

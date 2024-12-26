@@ -19,6 +19,7 @@ type project struct {
 	Display     string   `json:"display"`
 }
 
+// todo not sure these are going to stay around much longer
 type job struct {
 	Company string `json:"company"`
 	Title   string `json:"title"`

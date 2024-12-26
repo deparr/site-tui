@@ -33,6 +33,7 @@ func (m model) debugView() string {
 		"content: "+fmt.Sprintf("%d x %d", m.contentWidth, m.contentHeight),
 		"container: "+fmt.Sprintf("%d x %d", m.containerWidth, m.containerHeight),
 		"term: "+fmt.Sprintf("%d x %d", m.termWidth, m.termHeight),
+		"m.size: "+fmt.Sprintf("%d", m.size),
 		"",
 	)
 
@@ -47,35 +48,35 @@ func (m model) debugView() string {
 			"body: ",
 			rgba2String(theme.Body().RGBA()),
 			" ",
-			base.Background(theme.Body()).Render(" "),
+			base.Foreground(theme.Body()).Render("█"),
 		),
 		lipgloss.JoinHorizontal(
 			lipgloss.Left,
 			"border: ",
 			rgba2String(theme.Border().RGBA()),
 			" ",
-			base.Background(theme.Border()).Render(" "),
+			base.Foreground(theme.Border()).Render("█"),
 		),
 		lipgloss.JoinHorizontal(
 			lipgloss.Left,
 			"highlight: ",
 			rgba2String(theme.Highlight().RGBA()),
 			" ",
-			base.Background(theme.Highlight()).Render(" "),
+			base.Foreground(theme.Highlight()).Render("█"),
 		),
 		lipgloss.JoinHorizontal(
 			lipgloss.Left,
 			"accent: ",
 			rgba2String(theme.Accent().RGBA()),
 			" ",
-			base.Background(theme.Accent()).Render(" "),
+			base.Foreground(theme.Accent()).Render("█"),
 		),
 		lipgloss.JoinHorizontal(
 			lipgloss.Left,
 			"background: ",
 			rgba2String(theme.Background().RGBA()),
 			" ",
-			base.Background(theme.Background()).Render(" "),
+			base.Foreground(theme.Background()).Render("█"),
 		),
 		" ",
 	)
@@ -121,7 +122,7 @@ func (m model) debugView() string {
 		" ",
 	)
 
-	projects := fmt.Sprintf("projs: %v", projects)
+	projects := fmt.Sprintf("projs: %v", pinnedRepos)
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,

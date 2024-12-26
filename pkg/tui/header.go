@@ -1,8 +1,6 @@
 package tui
 
 import (
-	"log"
-
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
@@ -21,7 +19,6 @@ func (m model) headerUpdate(msg tea.Msg) (model, tea.Cmd) {
 		case "e":
 			return m.experienceSwitch()
 		case "d":
-			log.Print("switching to debug")
 			return m.debugSwitch()
 		case "q":
 			return m, tea.Quit

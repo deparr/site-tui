@@ -17,8 +17,8 @@ func (m model) splashInit() tea.Cmd {
 	cmd := tea.Tick(time.Millisecond*100, func(t time.Time) tea.Msg {
 		return DelayCompleteMsg{}
 	})
-	spin := m.spinStartCmd()
-	return tea.Batch(cmd, spin)
+	// spin := m.spinStartCmd()
+	return cmd
 }
 
 func (m model) splashUpdate(msg tea.Msg) (model, tea.Cmd) {

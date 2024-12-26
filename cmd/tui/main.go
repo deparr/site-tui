@@ -7,9 +7,11 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/deparr/portfolio/go/pkg/tui"
+	"github.com/joho/godotenv"
 )
 
 func main() {
+	godotenv.Load()
 	f, err := tea.LogToFile("debug.log", "debug")
 	if err != nil {
 		fmt.Println(err)
@@ -20,6 +22,5 @@ func main() {
 	prog := tea.NewProgram(tui.NewModel(renderer))
 	if _, err := prog.Run(); err != nil {
 		fmt.Printf("Error: %v", err)
-		os.Exit(1)
 	}
 }

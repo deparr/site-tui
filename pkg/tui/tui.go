@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/deparr/portfolio/go/pkg/client"
 	"github.com/deparr/portfolio/go/pkg/tui/theme"
 )
 
@@ -26,6 +27,7 @@ const (
 	small
 	medium
 	large
+	fill
 )
 
 type model struct {
@@ -63,6 +65,7 @@ func NewModel(renderer *lipgloss.Renderer) tea.Model {
 				binds: []footerBinding{
 					{key: "j/k", action: "scroll"},
 					{key: "q", action: "quit"},
+					{key: "f", action: "maximize"},
 				},
 			},
 		},
@@ -70,7 +73,9 @@ func NewModel(renderer *lipgloss.Renderer) tea.Model {
 }
 
 func (m model) Init() tea.Cmd {
-	go populateProjects()
+	checkEnv()
+	client.Setup()
+	go m.populateProjects()
 	return m.splashInit()
 }
 
@@ -86,16 +91,26 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.termWidth = msg.Width
 		m.termHeight = msg.Height
 
+		// sizes based on 1080p 12pt font
 		switch {
 		case m.termWidth < 80 || m.termHeight < 30:
 			m.size = undersized
 			m.containerWidth = m.termWidth
 			m.containerHeight = m.termHeight
+		case m.termWidth < 100 && m.termHeight < 40:
+			m.size = small
+			m.containerWidth = m.termWidth
+			m.containerHeight = m.termHeight
+		case m.termWidth < 100:
+			m.size = medium
+			m.containerWidth = m.termWidth
+			m.containerHeight = m.termHeight
 		default:
 			m.size = large
-			m.containerWidth = 80
-			m.containerHeight = min(msg.Height, 30)
+			m.containerWidth = min(m.termWidth, 120)
+			m.containerHeight = min(msg.Height, 40)
 		}
+
 
 		m.contentWidth = m.containerWidth - 4
 		m = m.updateViewport()
@@ -104,6 +119,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c":
 			return m, tea.Quit
+		case "f":
+			if m.size == fill {
+				return m, tea.WindowSize()
+			} else {
+				m.size = fill
+				m.containerWidth = m.termWidth - m.termWidth % 10
+				m.containerHeight = m.termHeight - m.termWidth % 10
+				m.contentWidth = m.containerWidth - 4
+			}
+			m = m.updateViewport()
 		}
 	}
 
@@ -229,7 +254,7 @@ func (m model) locView() string {
 	case 100:
 		view = "BOT"
 	default:
-		view = fmt.Sprintf("%d%% %d/%d", percent, y, m.viewport.TotalLineCount())
+		view = fmt.Sprintf("%d%% %d/%d", percent, y + lines, m.viewport.TotalLineCount())
 	}
 	return m.theme.TextAccent().Bold(true).Render(view)
 }

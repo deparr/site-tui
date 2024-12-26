@@ -1,6 +1,8 @@
 package tui
 
 import (
+	"os"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -21,7 +23,7 @@ func (m model) contactView() string {
 
 	contact := lipgloss.JoinVertical(
 		lipgloss.Left,
-		base("")+highlight("  david@dparrott.dev"),
+		base("")+highlight("  " + os.Getenv("EMAIL")),
 		base("󰊤")+highlight("  github/deparr"),
 		base("󰌻")+highlight("  in/dparrott"),
 	)

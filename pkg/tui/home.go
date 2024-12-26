@@ -15,7 +15,8 @@ func (m model) homeUpdate(msg tea.Msg) (model, tea.Cmd) {
 	return m, nil
 }
 
-const bird = `
+const (
+	bird = `
                             
   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣤⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀  
   ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣤⠛⠀⠀⠛⣤⠀⠀⠀⠀⠀⠀⠀⠀  
@@ -30,12 +31,12 @@ const bird = `
   ⣤⣤⣤⣤⣤⣿⠛⠛⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀   
 `
 
-const content = `
+	content = `
 Welcome! Here you can find a little bit about me and what I get up to.
 
 I'm a recent CS grad with special interests in programming languages, developer tools, terminals, and out of necessity: webdev 😢.
 `
-const name = `     __          _    __
+	name = `     __          _    __
  ___/ /__ __  __(_)__/ /          
 / _  / _ '/ |/ / / _  /           
 \_,_/\_,_/|___/_/\_,_/     __  __ 
@@ -44,6 +45,7 @@ const name = `     __          _    __
  / .__/\_,_/_/ /_/  \___/\__/\__/ 
 /_/                               
 `
+)
 
 func (m model) homeView() string {
 	olines := []string{}

@@ -1,6 +1,6 @@
 module github.com/deparr/portfolio/go
 
-go 1.23.0
+go 1.23.3
 
 require (
 	github.com/charmbracelet/bubbles v0.20.0
@@ -9,7 +9,8 @@ require (
 	github.com/charmbracelet/log v0.4.0
 	github.com/charmbracelet/ssh v0.0.0-20240725163421-eb71b85b27aa
 	github.com/charmbracelet/wish v1.4.3
-	github.com/google/go-github/v67 v67.0.0
+	github.com/deparr/api v0.0.0-20241224225219-526ce50704d4
+	github.com/joho/godotenv v1.5.1
 	golang.org/x/crypto v0.31.0
 )
 
@@ -26,7 +27,6 @@ require (
 	github.com/creack/pty v1.1.21 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
 	github.com/go-logfmt/logfmt v0.6.0 // indirect
-	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-localereader v0.0.1 // indirect
