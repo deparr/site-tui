@@ -16,10 +16,4 @@ func checkEnv() {
 	if !ok {
 		slog.Warn("missing env", "var", "GITHUB_URL")
 	}
-
-	// TODO panic or (better) somehow degrade when this is unavailable
-	_, ok = os.LookupEnv("API_URL")
-	if ! ok {
-		slog.Warn("missing env", "var", "API_URL")
-	}
 }

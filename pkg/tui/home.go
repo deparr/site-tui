@@ -48,12 +48,7 @@ I'm a recent CS grad with special interests in programming languages, developer 
 )
 
 func (m model) homeView() string {
-	olines := []string{}
-	for range 40 {
-		olines = append(olines, "LINE")
-	}
-
-	birdView := m.theme.Base().Bold(true).Render(bird)
+	birdView := m.theme.TextBase().Render(bird)
 	birdWidth := lipgloss.Width(birdView)
 	textWidth := m.contentWidth - birdWidth - 6
 	return lipgloss.JoinHorizontal(lipgloss.Top,

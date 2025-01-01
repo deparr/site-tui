@@ -34,6 +34,7 @@ func (m model) debugView() string {
 		"container: "+fmt.Sprintf("%d x %d", m.containerWidth, m.containerHeight),
 		"term: "+fmt.Sprintf("%d x %d", m.termWidth, m.termHeight),
 		"m.size: "+fmt.Sprintf("%d", m.size),
+		"column: "+fmt.Sprintf("%d", (m.contentWidth - 8) / 2),
 		"",
 	)
 
@@ -122,7 +123,14 @@ func (m model) debugView() string {
 		" ",
 	)
 
-	projects := fmt.Sprintf("projs: %v", pinnedRepos)
+	projects := fmt.Sprintf("pinned: %v", m.state.project.pinnedRepos)
+	recent := fmt.Sprintf("recent: %v", m.state.project.recentRepos)
+	projstate := fmt.Sprintf(
+		"projstate\nerr: %v\nstatus: %d",
+		m.state.project.err,
+		m.state.project.status,
+	)
+
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -130,6 +138,10 @@ func (m model) debugView() string {
 		dimensions,
 		colors,
 		faint,
+		"",
+		projstate,
 		projects,
+		"",
+		recent,
 	)
 }

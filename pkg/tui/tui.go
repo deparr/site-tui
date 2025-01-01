@@ -51,6 +51,7 @@ type model struct {
 type state struct {
 	splash  splashState
 	footer  footerState
+	project *projectState
 	spinner spinnerState
 }
 
@@ -60,7 +61,8 @@ func NewModel(renderer *lipgloss.Renderer) tea.Model {
 		theme:    theme.BaseTheme(renderer),
 		renderer: renderer,
 		state: state{
-			splash: splashState{delay: false},
+			splash:  splashState{delay: false},
+			project: &projectState{},
 			footer: footerState{
 				binds: []footerBinding{
 					{key: "j/k", action: "scroll"},
@@ -74,9 +76,8 @@ func NewModel(renderer *lipgloss.Renderer) tea.Model {
 
 func (m model) Init() tea.Cmd {
 	checkEnv()
-	client.Setup()
-	go m.populateProjects()
-	return m.splashInit()
+	client.Init()
+	return tea.Batch(m.splashInit())
 }
 
 func (m model) switchPage(newPage page) model {
@@ -86,12 +87,12 @@ func (m model) switchPage(newPage page) model {
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	cmds := make([]tea.Cmd, 0)
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.termWidth = msg.Width
 		m.termHeight = msg.Height
 
-		// sizes based on 1080p 12pt font
 		switch {
 		case m.termWidth < 80 || m.termHeight < 30:
 			m.size = undersized
@@ -99,8 +100,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.containerHeight = m.termHeight
 		case m.termWidth < 100 && m.termHeight < 40:
 			m.size = small
-			m.containerWidth = m.termWidth
-			m.containerHeight = m.termHeight
+			m.containerWidth = 80
+			m.containerHeight = 30
 		case m.termWidth < 100:
 			m.size = medium
 			m.containerWidth = m.termWidth
@@ -108,11 +109,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		default:
 			m.size = large
 			m.containerWidth = min(m.termWidth, 120)
-			m.containerHeight = min(msg.Height, 40)
+			m.containerHeight = min(msg.Height, 42)
 		}
 
-
-		m.contentWidth = m.containerWidth - 4
+		m.contentWidth = m.containerWidth
 		m = m.updateViewport()
 
 	case tea.KeyMsg:
@@ -121,14 +121,26 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "f":
 			if m.size == fill {
-				return m, tea.WindowSize()
+				cmds = append(cmds, tea.WindowSize())
 			} else {
 				m.size = fill
-				m.containerWidth = m.termWidth - m.termWidth % 10
-				m.containerHeight = m.termHeight - m.termWidth % 10
-				m.contentWidth = m.containerWidth - 4
+				m.containerWidth = m.termWidth
+				m.containerHeight = m.termHeight
+				m.contentWidth = m.containerWidth
+				m = m.updateViewport()
 			}
-			m = m.updateViewport()
+		}
+	case asyncJobMsg:
+		switch msg.key {
+		case projectKey:
+			m.state.project.status = loading
+			m.state.project.err = nil
+			cmds = append(cmds, asyncUpdateProject)
+		}
+	case asyncDoneMsg:
+		switch msg.key {
+		case projectKey:
+			m.state.project.update(msg)
 		}
 	}
 
@@ -143,15 +155,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	m, headerCmd := m.headerUpdate(msg)
-	cmds := []tea.Cmd{headerCmd}
+	cmds = append(cmds, headerCmd)
 
 	if cmd != nil {
 		cmds = append(cmds, cmd)
 	}
-
-	m.viewport.SetContent(m.getContent())
-	m.viewport, cmd = m.viewport.Update(msg)
-	cmds = append(cmds, cmd)
 
 	m.viewport.SetContent(m.getContent())
 	m.viewport, cmd = m.viewport.Update(msg)
@@ -167,19 +175,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) updateViewport() model {
 	headerHeight := lipgloss.Height(m.headerView())
 	footerHeight := lipgloss.Height(m.footerView())
-	verticalMarginHeight := headerHeight + footerHeight + 2
+	verticalMarginHeight := headerHeight + footerHeight
 
-	width := m.containerWidth - 4
 	m.contentHeight = m.containerHeight - verticalMarginHeight
 
 	if !m.ready {
-		m.viewport = viewport.New(width, m.contentHeight)
+		m.viewport = viewport.New(m.contentWidth, m.contentHeight)
 		m.viewport.YPosition = headerHeight
 		m.viewport.HighPerformanceRendering = false
 		m.viewport.KeyMap = viewport.DefaultKeyMap()
 		m.ready = true
 	} else {
-		m.viewport.Width = width
+		m.viewport.Width = m.contentWidth
 		m.viewport.Height = m.contentHeight
 		m.viewport.GotoTop()
 	}
@@ -201,29 +208,25 @@ func (m model) View() string {
 		header := m.headerView()
 		footer := m.footerView()
 
-		var view string
-		if m.hasScroll {
-			view = lipgloss.JoinVertical(
-				lipgloss.Right,
-				m.viewport.View(),
-				m.locView(),
-			)
-		} else {
-			view = m.getContent()
-		}
-
+		view := m.viewport.View()
 		height := m.containerHeight
 		height -= lipgloss.Height(header)
 		height -= lipgloss.Height(footer)
 
+		var loc string
+		if m.hasScroll {
+			loc = m.locView()
+		}
+
 		boxedView := lipgloss.JoinVertical(
-			lipgloss.Center,
+			lipgloss.Right,
 			header,
 			m.theme.Base().
-				Width(m.containerWidth).
+				Width(m.contentWidth).
 				Height(height).
 				Padding(0, 1).
 				Render(view),
+			loc,
 			footer,
 		)
 
@@ -242,11 +245,12 @@ func (m model) View() string {
 
 func (m model) locView() string {
 	lines := m.viewport.TotalLineCount()
+	// todo figure out why this is even possible
 	if m.viewport.VisibleLineCount() >= lines {
-		return "ALL"
+		return ""
 	}
-	y := m.viewport.YOffset
 	percent := int(m.viewport.ScrollPercent() * 100)
+	loc := int(m.viewport.ScrollPercent() * float64(lines))
 	var view string
 	switch percent {
 	case 0:
@@ -254,7 +258,7 @@ func (m model) locView() string {
 	case 100:
 		view = "BOT"
 	default:
-		view = fmt.Sprintf("%d%% %d/%d", percent, y + lines, m.viewport.TotalLineCount())
+		view = fmt.Sprintf("%d%% %d/%d", percent, loc, m.viewport.TotalLineCount())
 	}
 	return m.theme.TextAccent().Bold(true).Render(view)
 }
