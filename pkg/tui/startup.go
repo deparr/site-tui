@@ -7,13 +7,17 @@ import (
 
 // checks for vital env vars
 func checkEnv() {
-	_, ok := os.LookupEnv("WEBSITE_URL")
-	if !ok {
-		slog.Warn("missing env", "var", "WEBSITE_URL")
-	}
-
-	_, ok = os.LookupEnv("GITHUB_URL")
-	if !ok {
-		slog.Warn("missing env", "var", "GITHUB_URL")
+	for _, _var := range []string{
+		"WEBSITE_URL",
+		"GITHUB_URL",
+		"GITHUB_USER",
+		"LINKEDIN_USER",
+		"API_URL",
+		"EMAIL",
+	} {
+		_, ok := os.LookupEnv(_var)
+		if !ok {
+			slog.Warn("missing env", "var", _var)
+		}
 	}
 }

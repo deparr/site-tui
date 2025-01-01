@@ -16,8 +16,8 @@ func (m model) headerUpdate(msg tea.Msg) (model, tea.Cmd) {
 			return m.contactSwitch()
 		case "p":
 			return m.projectsSwitch()
-		case "e":
-			return m.experienceSwitch()
+		case "b":
+			return m.blogSwitch()
 		case "d":
 			return m.debugSwitch()
 		case "q":
@@ -29,7 +29,7 @@ func (m model) headerUpdate(msg tea.Msg) (model, tea.Cmd) {
 }
 
 func (m model) headerView() string {
-	base := m.theme.Base().Render
+	base := m.theme.TextBase().Render
 	highlight := m.theme.TextHighlight().Bold(true).Render
 	accent := m.theme.TextAccent().Render
 	logoBase := m.theme.TextAccent().Bold(true).Italic(true).Render
@@ -38,7 +38,7 @@ func (m model) headerView() string {
 	logo := logoAccent("@") + logoBase("dp")
 	home := accent("h") + base(" home")
 	projects := accent("p") + base(" projects")
-	experience := accent("e") + base(" experience")
+	blog := accent("b") + base(" blog")
 	contact := accent("c") + base(" contact")
 
 	switch m.page {
@@ -48,15 +48,15 @@ func (m model) headerView() string {
 		contact = accent("c") + highlight(" contact")
 	case projectsPage:
 		projects = accent("p") + highlight(" projects")
-	case experiencePage:
-		experience = accent("e") + highlight(" experience")
+	case blogPage:
+		blog = accent("b") + highlight(" blog")
 	}
 
 	tabs := []string{
 		logo,
 		home,
 		projects,
-		experience,
+		blog,
 		contact,
 	}
 

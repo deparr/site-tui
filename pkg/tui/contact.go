@@ -24,8 +24,8 @@ func (m model) contactView() string {
 	contact := lipgloss.JoinVertical(
 		lipgloss.Left,
 		base("")+highlight("  " + os.Getenv("EMAIL")),
-		base("󰊤")+highlight("  github/deparr"),
-		base("󰌻")+highlight("  in/dparrott"),
+		base("󰊤")+highlight("  github/" + os.Getenv("GITHUB_USER")),
+		base("󰌻")+highlight("  in/" + os.Getenv("LINKEDIN_USER")),
 	)
 
 	return m.renderer.Place(

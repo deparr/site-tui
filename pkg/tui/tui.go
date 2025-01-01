@@ -18,7 +18,7 @@ const (
 	homePage
 	contactPage
 	projectsPage
-	experiencePage
+	blogPage
 	debugPage
 )
 
@@ -52,6 +52,7 @@ type state struct {
 	splash  splashState
 	footer  footerState
 	project *projectState
+	blog    *blogState
 	spinner spinnerState
 }
 
@@ -63,6 +64,7 @@ func NewModel(renderer *lipgloss.Renderer) tea.Model {
 		state: state{
 			splash:  splashState{delay: false},
 			project: &projectState{},
+			blog: &blogState{},
 			footer: footerState{
 				binds: []footerBinding{
 					{key: "j/k", action: "scroll"},
@@ -272,8 +274,8 @@ func (m model) getContent() string {
 		content = m.contactView()
 	case projectsPage:
 		content = m.projectsView()
-	case experiencePage:
-		content = m.experienceView()
+	case blogPage:
+		content = m.blogView()
 	case debugPage:
 		content = m.debugView()
 	}

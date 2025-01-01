@@ -112,7 +112,7 @@ func (m model) projectsView() string {
 				header(proj.Name),
 				base(proj.Desc),
 				link(proj.Url),
-				colorBar(proj.Language, columnWidth-4),
+				"  "+colorBar(proj.Language, columnWidth-4)+"  ",
 				"",
 			),
 		)
