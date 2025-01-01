@@ -14,7 +14,7 @@ type splashState struct {
 type DelayCompleteMsg struct{}
 
 func (m model) splashInit() tea.Cmd {
-	cmd := tea.Tick(time.Millisecond*100, func(t time.Time) tea.Msg {
+	cmd := tea.Tick(time.Millisecond*1200, func(t time.Time) tea.Msg {
 		return DelayCompleteMsg{}
 	})
 	// spin := m.spinStartCmd()
