@@ -16,15 +16,22 @@ import (
 	"github.com/charmbracelet/wish/bubbletea"
 	"github.com/charmbracelet/wish/logging"
 	"github.com/deparr/portfolio/go/pkg/tui"
+	"github.com/joho/godotenv"
 	gossh "golang.org/x/crypto/ssh"
 )
 
 const (
 	host = "0.0.0.0"
-	port = "2222"
+	port = "22"
 )
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Error("godotenv:", err)
+		os.Exit(1)
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
@@ -48,7 +55,7 @@ func main() {
 		}),
 	)
 	if err != nil {
-		log.Error("Could not start server", "error", err)
+		log.Error("Could not create server", "error", err)
 	}
 
 	log.Info("Starting SSH server", "port", port)
@@ -62,6 +69,7 @@ func main() {
 	<-ctx.Done()
 	s.Shutdown(ctx)
 	log.Info("Stopping SSH server")
+	cancel()
 }
 
 // TODO: this bridge shouldn't be needed anymore, but I still can't get the
@@ -85,13 +93,13 @@ func (s *sshOutput) Fd() uintptr {
 }
 
 func teaHandler(s ssh.Session) (tea.Model, []tea.ProgramOption) {
-	pty,_,_ := s.Pty()
-	sshPty := &sshOutput{
-		Session: s,
-		tty:     pty.Slave,
-	}
+	// pty,_,_ := s.Pty()
+	// sshPty := &sshOutput{
+	// 	Session: s,
+	// 	tty:     pty.Slave,
+	// }
 
-	renderer := bubbletea.MakeRenderer(sshPty)
+	renderer := bubbletea.MakeRenderer(s)
 	model := tui.NewModel(renderer)
 	return model, []tea.ProgramOption{tea.WithAltScreen()}
 }
