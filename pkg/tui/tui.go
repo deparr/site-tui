@@ -77,7 +77,7 @@ func NewModel(renderer *lipgloss.Renderer) tea.Model {
 func (m model) Init() tea.Cmd {
 	checkEnv()
 	client.Init()
-	return tea.Batch(m.splashInit())
+	return tea.Batch(m.splashInit(), asyncStartProject)
 }
 
 func (m model) switchPage(newPage page) model {

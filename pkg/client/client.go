@@ -6,10 +6,11 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/deparr/api/pkg/model"
 )
+
+// todo consider making the client a struct instead of package level
 
 type apiStatus int
 
@@ -24,9 +25,6 @@ const (
 var apiUrl string
 var status apiStatus = statusOk
 
-var badHealthChecks int
-var healthCheckTicker *time.Ticker
-
 func Init() {
 	url, ok := os.LookupEnv("API_URL")
 	if !ok {
@@ -35,35 +33,6 @@ func Init() {
 	} else {
 		apiUrl = url
 	}
-
-	healthCheckTicker = time.NewTicker(20 * time.Second)
-	badHealthChecks = 0
-	// TODO dont do this, just try to load at startup and then allow a manual rety on errors
-	// go func() {
-	// 	hcUrl := apiUrl + "/health"
-	// 	for {
-	// 		select {
-	// 		case _ = <-healthCheckTicker.C:
-	// 			slog.Info("ping")
-	// 			res, err := http.Get(hcUrl)
-	// 			defer res.Body.Close()
-	// 			if err != nil {
-	// 				slog.Error("client.HealthCheck", "err", err, "status", res.Status)
-	// 			}
-	//
-	// 			if res.StatusCode != http.StatusOK {
-	// 				badHealthChecks += 1
-	// 				slog.Warn("failed server health check", "count", badHealthChecks)
-	// 				if badHealthChecks >= unhealthyThreshold {
-	// 					slog.Error("passed health check threshold")
-	// 					status = serverUnreachable
-	// 				}
-	// 			} else {
-	// 				badHealthChecks = 0
-	// 			}
-	// 		}
-	// 	}
-	// }()
 }
 
 func ApiIsHealthy() bool {
