@@ -66,7 +66,7 @@ func (m model) projectsView() string {
 		)
 	case errored:
 		error := m.theme.TextError().Render
-		link := m.theme.Base().Faint(true).Underline(true).Render
+		link := m.theme.TextFaint().Underline(true).Render
 		base := m.theme.Base().Render
 		return lipgloss.Place(
 			m.contentWidth,
@@ -99,7 +99,7 @@ func (m model) projectsView() string {
 	// todo dynamically create matrices per *section*
 	columnWidth := (m.contentWidth - 8) / 2
 	base := m.theme.Base().Width(columnWidth).PaddingLeft(2).Render
-	link := m.theme.Base().Faint(true).Width(columnWidth).PaddingLeft(2).Render
+	link := m.theme.TextFaint().Width(columnWidth).PaddingLeft(2).Render
 	header := m.theme.TextAccent().Bold(true).Render
 	section := m.theme.TextHighlight().Bold(true).Render
 

@@ -82,47 +82,6 @@ func (m model) debugView() string {
 		" ",
 	)
 
-	faint := lipgloss.JoinVertical(
-		lipgloss.Left,
-		"faint colors:",
-		lipgloss.JoinHorizontal(
-			lipgloss.Left,
-			"body: ",
-			rgba2String(theme.Body().RGBA()),
-			" ",
-			base.Foreground(theme.Body()).Faint(true).Render("█"),
-		),
-		lipgloss.JoinHorizontal(
-			lipgloss.Left,
-			"border: ",
-			rgba2String(theme.Border().RGBA()),
-			" ",
-			base.Foreground(theme.Border()).Faint(true).Render("█"),
-		),
-		lipgloss.JoinHorizontal(
-			lipgloss.Left,
-			"highlight: ",
-			rgba2String(theme.Highlight().RGBA()),
-			" ",
-			base.Foreground(theme.Highlight()).Faint(true).Render("█"),
-		),
-		lipgloss.JoinHorizontal(
-			lipgloss.Left,
-			"accent: ",
-			rgba2String(theme.Accent().RGBA()),
-			" ",
-			base.Foreground(theme.Accent()).Faint(true).Render("█"),
-		),
-		lipgloss.JoinHorizontal(
-			lipgloss.Left,
-			"background: ",
-			rgba2String(theme.Background().RGBA()),
-			" ",
-			base.Foreground(theme.Background()).Faint(true).Render("█"),
-		),
-		" ",
-	)
-
 	projects := fmt.Sprintf("pinned: %v", m.state.project.pinnedRepos)
 	recent := fmt.Sprintf("recent: %v", m.state.project.recentRepos)
 	projstate := fmt.Sprintf(
@@ -137,7 +96,6 @@ func (m model) debugView() string {
 		header,
 		dimensions,
 		colors,
-		faint,
 		"",
 		projstate,
 		projects,
