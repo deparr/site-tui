@@ -32,9 +32,11 @@ const (
 `
 
 	content = `
-Welcome! Here you can find a little bit about me and what I get up to.
+Welcome!
 
-I'm a recent CS grad with special interests in programming languages, developer tools, terminals, and out of necessity: webdev 😢.
+I'm a recent CS grad with special interests in programming languages, developer tools, terminals, and graphics.
+
+Here you'll find a little bit about my current projects and, eventually, some blog posts.
 `
 	name = `     __          _    __
  ___/ /__ __  __(_)__/ /          
@@ -51,6 +53,7 @@ func (m model) homeView() string {
 	birdView := m.theme.TextBase().Render(bird)
 	birdWidth := lipgloss.Width(birdView)
 	textWidth := m.contentWidth - birdWidth - 6
+	// todo formating is a little strange here
 	return lipgloss.JoinHorizontal(lipgloss.Top,
 		birdView,
 		m.theme.Base().Width(3).Render(),
