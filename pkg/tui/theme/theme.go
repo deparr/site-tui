@@ -4,6 +4,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// todo is this really the best way to do this ??
 type Theme struct {
 	renderer *lipgloss.Renderer
 
@@ -30,7 +31,7 @@ func BaseTheme(renderer *lipgloss.Renderer) Theme {
 	base.accent = lipgloss.AdaptiveColor{Dark: "#e5e8e6", Light: "#151515"}
 	base.faint = lipgloss.AdaptiveColor{Dark: "#696969", Light: "#898989"}
 	base.error = lipgloss.AdaptiveColor{Dark: "#cc6666", Light: "#c82829"}
-	base.base = lipgloss.NewStyle().Foreground(base.body)
+	base.base = renderer.NewStyle().Foreground(base.body)
 
 	return base
 }

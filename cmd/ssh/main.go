@@ -17,6 +17,7 @@ import (
 	"github.com/charmbracelet/wish/logging"
 	"github.com/deparr/portfolio/go/pkg/tui"
 	"github.com/joho/godotenv"
+	"github.com/muesli/termenv"
 	gossh "golang.org/x/crypto/ssh"
 )
 
@@ -74,6 +75,9 @@ func main() {
 
 // TODO: this bridge shouldn't be needed anymore, but I still can't get the
 //  colors to work correctly when run as a systemd service
+//	01/06/24 -- this bridge is most definitely needed, otherwise firest
+//	render is delayed and colors are off. It shouldn't be needed from
+//	everything I've read but it is, so
 
 type sshOutput struct {
 	ssh.Session
@@ -93,13 +97,15 @@ func (s *sshOutput) Fd() uintptr {
 }
 
 func teaHandler(s ssh.Session) (tea.Model, []tea.ProgramOption) {
-	// pty,_,_ := s.Pty()
-	// sshPty := &sshOutput{
-	// 	Session: s,
-	// 	tty:     pty.Slave,
-	// }
+	pty,_,_ := s.Pty()
+	sshPty := &sshOutput{
+		Session: s,
+		tty:     pty.Slave,
+	}
 
-	renderer := bubbletea.MakeRenderer(s)
+	renderer := bubbletea.MakeRenderer(sshPty)
+	// this just doesn't do anything apparently
+	renderer.SetColorProfile(termenv.TrueColor)
 	model := tui.NewModel(renderer)
 	return model, []tea.ProgramOption{tea.WithAltScreen()}
 }

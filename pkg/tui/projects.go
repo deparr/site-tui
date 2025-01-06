@@ -57,7 +57,7 @@ func (m model) projectsUpdate(msg tea.Msg) (model, tea.Cmd) {
 func (m model) projectsView() string {
 	switch m.state.project.status {
 	case loading:
-		return lipgloss.Place(
+		return m.renderer.Place(
 			m.contentWidth,
 			m.contentHeight,
 			lipgloss.Center,
@@ -68,7 +68,7 @@ func (m model) projectsView() string {
 		error := m.theme.TextError().Render
 		link := m.theme.TextFaint().Underline(true).Render
 		base := m.theme.Base().Render
-		return lipgloss.Place(
+		return m.renderer.Place(
 			m.contentWidth,
 			m.contentHeight,
 			lipgloss.Center,
@@ -87,7 +87,7 @@ func (m model) projectsView() string {
 			),
 		)
 	case empty:
-		return lipgloss.Place(
+		return m.renderer.Place(
 			m.contentWidth,
 			m.contentHeight,
 			lipgloss.Center,
@@ -112,7 +112,7 @@ func (m model) projectsView() string {
 				header(proj.Name),
 				base(proj.Desc),
 				link(proj.Url),
-				"  "+colorBar(proj.Language, columnWidth-4)+"  ",
+				"  "+colorBar(proj.Language, columnWidth-4, m.renderer)+"  ",
 				"",
 			),
 		)
@@ -128,7 +128,7 @@ func (m model) projectsView() string {
 				header(proj.Name),
 				base(proj.Desc),
 				link(proj.Url),
-				"  "+colorBar(proj.Language, columnWidth-4)+"  ",
+				"  "+colorBar(proj.Language, columnWidth-4, m.renderer)+"  ",
 				"",
 			),
 		)
@@ -149,7 +149,7 @@ func titledSeparator(header string, lineChar string, widthToFill int) string {
 	return "╭ " + header + " " + strings.Repeat(lineChar, widthToFill-len(header)-4) + "╮"
 }
 
-func colorBar(langs apimodel.RepoLangs, width int) string {
+func colorBar(langs apimodel.RepoLangs, width int, renderer *lipgloss.Renderer) string {
 	usedWidth := 0
 	widths := []int{}
 	for _, l := range langs {
@@ -172,7 +172,7 @@ func colorBar(langs apimodel.RepoLangs, width int) string {
 		}
 	}
 
-	style := lipgloss.NewStyle()
+	style := renderer.NewStyle()
 	colorBar := []string{}
 	for i := range langs {
 		w := widths[i]
