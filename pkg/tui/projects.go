@@ -150,6 +150,10 @@ func titledSeparator(header string, lineChar string, widthToFill int) string {
 }
 
 func colorBar(langs apimodel.RepoLangs, width int, renderer *lipgloss.Renderer) string {
+	if len(langs) == 0 {
+		return "";
+	}
+
 	usedWidth := 0
 	widths := []int{}
 	for _, l := range langs {
