@@ -34,9 +34,8 @@ const (
 	content = `
 Welcome!
 
-I'm a recent CS grad with special interests in programming languages, developer tools, terminals, and graphics.
-
 Here you'll find a little bit about my current projects and, eventually, some blog posts.
+I'm a recent CS grad with interested in programming languages, developer tools, terminals, graphics, and out of necessity: webdev 😢.
 `
 	name = `     __          _    __
  ___/ /__ __  __(_)__/ /          
