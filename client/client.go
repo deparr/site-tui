@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/deparr/api/pkg/model"
+	"github.com/deparr/api/model"
 )
 
 // todo consider making the client a struct instead of package level

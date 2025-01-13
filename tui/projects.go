@@ -8,8 +8,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	apimodel "github.com/deparr/api/pkg/model"
-	"github.com/deparr/portfolio/go/pkg/client"
+	apimodel "github.com/deparr/api/model"
+	"github.com/deparr/site-tui/client"
 )
 
 // todo consider state interface type

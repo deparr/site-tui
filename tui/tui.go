@@ -6,8 +6,8 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/deparr/portfolio/go/pkg/client"
-	"github.com/deparr/portfolio/go/pkg/tui/theme"
+	"github.com/deparr/site-tui/client"
+	"github.com/deparr/site-tui/tui/theme"
 )
 
 type page int

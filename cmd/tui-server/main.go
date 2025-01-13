@@ -15,7 +15,7 @@ import (
 	"github.com/charmbracelet/wish/activeterm"
 	"github.com/charmbracelet/wish/bubbletea"
 	"github.com/charmbracelet/wish/logging"
-	"github.com/deparr/portfolio/go/pkg/tui"
+	"github.com/deparr/site-tui/tui"
 	"github.com/joho/godotenv"
 	"github.com/muesli/termenv"
 	gossh "golang.org/x/crypto/ssh"

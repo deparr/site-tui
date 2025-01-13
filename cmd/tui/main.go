@@ -4,9 +4,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/deparr/site-tui/tui"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/deparr/portfolio/go/pkg/tui"
 	"github.com/joho/godotenv"
 )
 
@@ -18,6 +19,8 @@ func main() {
 		os.Exit(1)
 	}
 	defer f.Close()
+
+
 	renderer := lipgloss.DefaultRenderer()
 	prog := tea.NewProgram(tui.NewModel(renderer))
 	if _, err := prog.Run(); err != nil {
