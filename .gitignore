@@ -3,3 +3,5 @@
 .ssh/
 .env
 .env.*
+.zig-cache
+zig-out
