@@ -8,8 +8,8 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 
 const TABS = [
-  { name: "home", scene: "home", description: "home desc", keys: [{bind:"b", desc:"somet"}]},
-  { name: "blog", scene: "blog", description: "blog desc", keys: [{bind: "2",desc: "blog key"}] },
+  { name: "home", scene: "home", description: "home desc", keys: [{ bind: "b", desc: "somet" }] },
+  { name: "blog", scene: "blog", description: "blog desc", keys: [{ bind: "2", desc: "blog key" }] },
   { name: "resume", scene: "resume", description: "resume desc", keys: [] },
   { name: "contact", scene: "contact", description: "contact desc", keys: [] },
 ];
@@ -45,6 +45,9 @@ export default function App() {
       case "`":
         renderer.console.toggle();
         break;
+      case "q":
+        renderer.stop()
+        process.exit(0);
       case "h":
         setActiveTab(0)
         break;
@@ -61,7 +64,7 @@ export default function App() {
         setActiveTab((prev) => (Math.max(prev - 1, 0)));
         break;
       case "right":
-        setActiveTab((prev) => (( prev + 1) % TABS.length));
+        setActiveTab((prev) => ((prev + 1) % TABS.length));
         break;
       case "t":
         renderer.toggleDebugOverlay();
@@ -88,7 +91,9 @@ export default function App() {
               <Home />
             </Match>
             <Match when={activeTab() == 1}>
-              <Blog />
+              <scrollbox>
+                <Blog />
+              </scrollbox>
             </Match>
             <Match when={activeTab() == 2}>
               <text>Resume</text>
@@ -109,7 +114,7 @@ if (import.meta.main) {
     useKittyKeyboard: false,
     consoleOptions: {
       maxStoredLogs: 1000,
-      sizePercent: 40,
+      sizePercent: 100,
     },
   })
 }

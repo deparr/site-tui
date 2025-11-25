@@ -1,7 +1,14 @@
-import { For, Match, Switch } from "solid-js";
-import { tui } from "../lib/theme";
-import { parse, type Heading, type Inline, type Para, type CodeBlock } from "@djot/djot";
-import { Dynamic } from "@opentui/solid";
+import { createSignal, For, Match, Switch } from "solid-js";
+import { tui, colors, syntaxColors } from "../lib/theme";
+import { parse, type Heading, type Inline, type Para, type CodeBlock, type Str, type Verbatim, type Block, type Section, type Emph, type SmartPunctuation, type Link, type DoubleQuoted } from "@djot/djot";
+import { TextAttributes } from "@opentui/core";
+
+interface PostMetadata {
+  title?: string;
+  description?: string;
+  date?: string;
+  tags?: string[];
+};
 
 const blogPageStr = `
 \`\`\`=meta
@@ -182,29 +189,97 @@ Thanks for reading!
 
 `;
 
+const punctuation = {
+  left_single_quote: "'",
+  right_single_quote: "'",
+  left_double_quote: '"',
+  right_double_quote: '"',
+  ellipses: "…",
+  em_dash: "—",
+  en_dash: "–",
+};
+
+
+function InlineNode(props: { inline: Inline }) {
+  const { inline } = props;
+  console.log(inline.tag, inline.tag == "link" ? inline.children : "");
+  return (
+    <Switch>
+      <Match when={inline.tag === "str"} >
+        {(inline as Str).text}
+      </Match>
+      <Match when={inline.tag === "verbatim"} >
+        {(inline as Verbatim).text}
+      </Match>
+      <Match when={inline.tag === "link"}>
+        <InlineNodes inline={(inline as Link).children} />
+      </Match>
+      <Match when={inline.tag === "smart_punctuation"}>
+        {punctuation[(inline as SmartPunctuation).type]}
+      </Match>
+      <Match when={inline.tag === "hard_break"}>
+        {"\n"}
+      </Match>
+      <Match when={inline.tag === "soft_break"}>
+        {" "}
+      </Match>
+      <Match when={inline.tag === "emph"}>
+        <InlineNodes inline={(inline as Emph).children} />
+      </Match>
+      <Match when={inline.tag === "double_quoted"}>
+        {'"'}<InlineNodes inline={(inline as DoubleQuoted).children} />{'"'}
+      </Match>
+      <Match when={inline.tag === "single_quoted"}>
+        {"'"}<InlineNodes inline={(inline as DoubleQuoted).children} />{"'"}
+      </Match>
+    </Switch>
+  );
+}
+
 function InlineNodes(props: {
   inline: Inline[]
 }) {
+  return (
+    <For each={props.inline}>{(s) => (
+      <InlineNode inline={s} />
+    )}
+    </For>
+  );
+
 }
 
-export default function Blog() {
-  const ast = parse(blogPageStr);
-  return (<For each={ast.children} fallback={<text>loading...</text>}>{(block) => (
+function BlockNodes(props: { blocks: Block[] }) {
+  return (
+    <For each={props.blocks} fallback={<text>BAD BLOCKS</text>}>{(b) => (
+      <BlockNode block={b} />
+    )}
+    </For>
+  );
+}
+
+function BlockNode(props: { block: Block }) {
+  const { block } = props;
+  console.log(block.tag, "--------------------");
+  return (
     <Switch>
+      <Match when={block.tag === "section"}>
+        <box marginTop={2}><BlockNodes blocks={(block as Section).children} /></box>
+      </Match>
       <Match when={block.tag === "heading"}>
-        <Dynamic component={`h${(block as Heading).level}`} >
+        <text fg={colors.dark.accent} attributes={TextAttributes.BOLD}>{"▎▋█ "}
           <InlineNodes inline={(block as Heading).children} />
-        </Dynamic>
+          {"\n"}
+        </text>
       </Match>
       <Match when={block.tag === "para"}>
-        <text><InlineNodes inline={(block as Para).children} /> </text>
+        <text marginTop={1}><InlineNodes inline={(block as Para).children} /></text>
       </Match>
-      <Match when={block.tag === "thematic_break"}>
-        <br/>
-      </Match>
-      <Match when={block.tag === "code_block"}>
-        <code content={(block as CodeBlock).text} filetype={(block as CodeBlock).lang} syntaxStyle={tui.syntax.dark}/>
-      </Match>
+      {/* <Match when={block.tag === "thematic_break"}> */}
+      {/*   <br /> */}
+      {/* </Match> */}
+      {/* <Match when={block.tag === "code_block"}> */}
+      {/*   <code content={(block as CodeBlock).text} filetype={(block as CodeBlock).lang} syntaxStyle={tui.syntax.dark} /> */}
+      {/* </Match> */}
       {/* <Match when={block.tag === "raw_block"}> */}
       {/* </Match> */}
       {/* <Match when={block.tag === "bullet_list"}> */}
@@ -215,7 +290,20 @@ export default function Blog() {
       {/*   <box></box> */}
       {/* </Match> */}
     </Switch>
-  )}
-  </For>
+  );
+}
+
+export default function Blog() {
+  const ast = parse(blogPageStr);
+  const [getMetadata, setMetadata] = createSignal<PostMetadata>({});
+  console.log("parsed ast");
+  return (
+    <box paddingTop={2} paddingBottom={1} paddingLeft={3} paddingRight={3}>
+      <box rowGap={1}>
+        <ascii_font color={[syntaxColors.dark.orange, syntaxColors.dark.red]} text="Building Static Sites" font="tiny" />
+        <ascii_font text="with Neovim" font="tiny" />
+      </box>
+      <BlockNodes blocks={ast.children} />
+    </box>
   );
 }
