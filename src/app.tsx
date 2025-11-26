@@ -6,6 +6,7 @@ import Home from "./components/Home";
 import Blog from "./components/Blog";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
+import Contact from "./components/Contact";
 
 const TABS = [
   { name: "home", scene: "home", description: "home desc", keys: [{ bind: "b", desc: "somet" }] },
@@ -33,10 +34,6 @@ export default function App() {
     if (real <= 100) return real;
     return Math.min(real, 120);
   };
-
-  createEffect(() => {
-    console.log("contentWidth:", contentWidth(), "contentHeight:", contentHeight(), "realWidth:", dimensions().width, "realHeight:", dimensions().height);
-  });
 
   const [activeTab, setActiveTab] = createSignal(0);
 
@@ -92,14 +89,14 @@ export default function App() {
             </Match>
             <Match when={activeTab() == 1}>
               <scrollbox>
-                <Blog />
+                <Blog width={contentWidth()} height={contentHeight()}/>
               </scrollbox>
             </Match>
             <Match when={activeTab() == 2}>
               <text>Resume</text>
             </Match>
             <Match when={activeTab() == 3}>
-              <text>Contact</text>
+              <Contact />
             </Match>
           </Switch>
         </box>
@@ -116,5 +113,6 @@ if (import.meta.main) {
       maxStoredLogs: 1000,
       sizePercent: 100,
     },
+    gatherStats: true,
   })
 }

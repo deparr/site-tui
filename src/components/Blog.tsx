@@ -1,6 +1,10 @@
-import { createSignal, For, Match, Switch } from "solid-js";
+import { For, Match, Show, Switch } from "solid-js";
 import { tui, colors, syntaxColors } from "../lib/theme";
-import { parse, type Heading, type Inline, type Para, type CodeBlock, type Str, type Verbatim, type Block, type Section, type Emph, type SmartPunctuation, type Link, type DoubleQuoted } from "@djot/djot";
+import {
+  type BulletList,
+  type Delete,
+  parse, type Heading, type Inline, type Para, type CodeBlock, type OrderedList, type RawBlock, type Str, type Verbatim, type Block, type Section, type Emph, type SmartPunctuation, type Link, type DoubleQuoted,
+  type Strong } from "@djot/djot";
 import { TextAttributes } from "@opentui/core";
 
 interface PostMetadata {
@@ -8,6 +12,11 @@ interface PostMetadata {
   description?: string;
   date?: string;
   tags?: string[];
+};
+
+type Size = {
+  width: number;
+  height: number;
 };
 
 const blogPageStr = `
@@ -21,6 +30,8 @@ template = post,base
 \`\`\`
 
 I enjoy having a personal website.
+
+---
 
 I don't enjoy Javascript front-end frameworks, especially for a site that's mostly static.
 I previously used Sveltekit for this site, and while it was nice, I've been wanting to move to something simpler.
@@ -83,25 +94,22 @@ Djot does most of the real work. My code mainly does highlighting and book keepi
 
 ### Highlighting
 
-My options for highlighting were [\`vim.tohtml\`](https://neovim.io/doc/user/lua.html#vim.tohtml) and 
-treesitter. Figuring \`vim.tohtml\` would be easier, I tried it first,
-extracting the style sheet and code block from the resulting HTML document.
+My options for highlighting were [\`vim.tohtml\`](https://neovim.io/doc/user/lua.html#vim.tohtml) and treesitter.
+Figuring \`vim.tohtml\` would be easier, I tried it first, extracting the style sheet and code block from the resulting HTML document.
 As you could probably guess, this was pretty janky.
 
-For starters, \`vim.tohtml\` only operates on valid *winids*; which means I have to 
-keep a window around to use for highlighting. This is fine in headless usage, but opening and closing
-tons of windows sometimes resulted in ui layout shifts; kind of annoying when you're trying to work.
+For starters, \`vim.tohtml\` only operates on valid *winids*; which means I have to keep a window around to use for highlighting.
+This is fine in headless usage, but opening and closing tons of windows sometimes resulted in ui layout shifts;
+kind of annoying when you're trying to work.
 
-Layout issues could probably be mitigated with better window management,
-but there were also issues with the extracted content. I was being lazy
-and taking each line between \`<code></code>\` tags as a line of code,
-which wasn't always the case. I'd have to properly parse the HTML to get what
-I want out of it, and at that point I might as well just generate the HTML myself.
+Layout issues could probably be mitigated with better window management, but there were also issues with the extracted content.
+I was being lazy and taking each line between \`<code></code>\` tags as a line of code, which wasn't always the case.
+I'd have to properly parse the HTML to get what I want out of it, and at that point I might as well just generate the HTML myself.
 
 That and wanting more control over the highlight style sheet pushed me to treesitter.
 
-Neovim's treesitter interface is quite nice actually. In just a few lines you
-can get an iterator over a query set's captures:
+Neovim's treesitter interface is quite nice actually.
+In just a few lines you can get an iterator over a query set's captures:
 
 \`\`\`lua
 local parser = vim.treesitter.get_string_parser(source, lang, {})
@@ -113,13 +121,12 @@ for id, node in queries:iter_captures(root, lang) do
 end
 \`\`\`
 
-Using treesitter is much better than \`tohtml\`. I can reliably generate the HTML
-I want, and I have more control over which highlight groups end up in the final style sheet.
+Using treesitter is much better than \`tohtml\`.
+I can reliably generate the HTML I want, and I have more control over which highlight groups end up in the final style sheet.
 However, it's not without its issues, as multi-line and nested captures can be tricky[^bad-hl].
 
 Most multi-line nodes are easy to handle (e.g. multi-line strings), but some (e.g. rust doc comments) are not.
-The annoying thing is this is parser dependent; rust doc comment nodes always span multiple
-lines, even when they're only a single line! 
+The annoying thing is this is parser dependent; rust doc comment nodes always span multiple lines, even when they're only a single line! 
 
 \`\`\`rust
 /// computes euclidean distance between two entities
@@ -149,8 +156,7 @@ path=\${path##*/} # no nesting
 path="\${path##*/}" # nested in @string
 \`\`\`
 
-Plus I like the lighter syntax highlighting that skipping the nested nodes gives, 
-so I've opted to skip them for now.
+Plus I like the lighter syntax highlighting that skipping the nested nodes gives, so I've opted to skip them for now.
 
 For longer examples, see [here](/blog/hl-test).
 
@@ -166,9 +172,9 @@ But where's the fun in that? If we're going to {-ab-}use Neovim this way, we mig
 Luckily Neovim exposes libuv to lua land, making this quite easy.
 
 We just need to listen on a \`uv.fs_event\`, and, after filtering and debouncing for real changes, send
-the list of changed files to the builder for re-rendering. Since the builder caches
-the rendered pages, template changes are also supported! Changing a template in watch mode
-will trigger a re-render for all pages that use it.
+the list of changed files to the builder for re-rendering.
+Since the builder caches the rendered pages, template changes are also supported!
+Changing a template in watch mode will trigger a re-render for all pages that use it.
 
 ## Closing Thoughts
 
@@ -199,17 +205,19 @@ const punctuation = {
   en_dash: "–",
 };
 
-
 function InlineNode(props: { inline: Inline }) {
   const { inline } = props;
-  console.log(inline.tag, inline.tag == "link" ? inline.children : "");
+  if (inline.tag == "footnote_reference") {
+    console.log(inline);
+  }
   return (
     <Switch>
       <Match when={inline.tag === "str"} >
         {(inline as Str).text}
       </Match>
       <Match when={inline.tag === "verbatim"} >
-        {(inline as Verbatim).text}
+        <span style={{ bg: "#323232", fg: syntaxColors.dark.green, bold: true }}
+        >{(inline as Verbatim).text}</span>
       </Match>
       <Match when={inline.tag === "link"}>
         <InlineNodes inline={(inline as Link).children} />
@@ -224,13 +232,25 @@ function InlineNode(props: { inline: Inline }) {
         {" "}
       </Match>
       <Match when={inline.tag === "emph"}>
-        <InlineNodes inline={(inline as Emph).children} />
+        <em><InlineNodes inline={(inline as Emph).children} /></em>
+      </Match>
+      <Match when={inline.tag === "strong"}>
+        <strong><InlineNodes inline={(inline as Strong).children} /></strong>
+      </Match>
+      <Match when={inline.tag === "delete"}>
+        <span style={{ strikethrough: true }}
+        ><InlineNodes inline={(inline as Delete).children} /></span>
       </Match>
       <Match when={inline.tag === "double_quoted"}>
         {'"'}<InlineNodes inline={(inline as DoubleQuoted).children} />{'"'}
       </Match>
       <Match when={inline.tag === "single_quoted"}>
         {"'"}<InlineNodes inline={(inline as DoubleQuoted).children} />{"'"}
+      </Match>
+      {/* <Match when={inline.tag === "footnote_reference"}> */}
+      {/* </Match> */}
+      <Match when={true}>
+        <span style={{ bg: "#ff0000" }}>{inline.tag}</span>
       </Match>
     </Switch>
   );
@@ -248,62 +268,117 @@ function InlineNodes(props: {
 
 }
 
-function BlockNodes(props: { blocks: Block[] }) {
+function BlockNodes(props: { blocks: Block[], dim: Size }) {
   return (
     <For each={props.blocks} fallback={<text>BAD BLOCKS</text>}>{(b) => (
-      <BlockNode block={b} />
+      <BlockNode block={b} dim={props.dim}/>
     )}
     </For>
   );
 }
 
-function BlockNode(props: { block: Block }) {
-  const { block } = props;
-  console.log(block.tag, "--------------------");
+function ListNode(props: {
+  list: BulletList | OrderedList,
+  kind: "-" | "1",
+  listNest: boolean,
+}) {
+  const { list, kind, listNest: nested } = props;
+  return (
+    <box marginTop={1} marginBottom={nested ? 1 : 0} paddingLeft={2} paddingRight={2}>
+      <For each={list.children}>{(item, i) => (
+        <For each={item.children}>{(listBlock) => {
+          return (<Switch>
+            <Match when={listBlock.tag === "para"}>
+              <text>{kind == "1" ? `${i() + ((list as OrderedList).start ?? 1)}. ` : '- '}
+                <InlineNodes inline={(listBlock as Para).children} />
+              </text>
+            </Match>
+            <Match when={listBlock.tag === "bullet_list" || listBlock.tag === "ordered_list"} >
+              <ListNode
+                list={listBlock as BulletList | OrderedList}
+                kind={listBlock.tag === "bullet_list" ? "-" : "1"}
+                listNest />
+            </Match>
+          </Switch>);
+        }}
+        </For>
+      )}
+      </For>
+    </box>);
+}
+
+function BlockNode(props: { block: Block, dim: Size }) {
+  const { block, dim } = props;
   return (
     <Switch>
       <Match when={block.tag === "section"}>
-        <box marginTop={2}><BlockNodes blocks={(block as Section).children} /></box>
+        <box marginTop={2}><BlockNodes blocks={(block as Section).children} dim={dim} /></box>
       </Match>
       <Match when={block.tag === "heading"}>
-        <text fg={colors.dark.accent} attributes={TextAttributes.BOLD}>{"▎▋█ "}
+        <text fg={colors.dark.accent} attributes={TextAttributes.BOLD} marginBottom={1}
+        >{"▎▋█ "}
           <InlineNodes inline={(block as Heading).children} />
-          {"\n"}
         </text>
       </Match>
       <Match when={block.tag === "para"}>
-        <text marginTop={1}><InlineNodes inline={(block as Para).children} /></text>
+        <text marginTop={1}>
+          <InlineNodes inline={(block as Para).children} />
+        </text>
       </Match>
-      {/* <Match when={block.tag === "thematic_break"}> */}
-      {/*   <br /> */}
-      {/* </Match> */}
-      {/* <Match when={block.tag === "code_block"}> */}
-      {/*   <code content={(block as CodeBlock).text} filetype={(block as CodeBlock).lang} syntaxStyle={tui.syntax.dark} /> */}
-      {/* </Match> */}
-      {/* <Match when={block.tag === "raw_block"}> */}
-      {/* </Match> */}
-      {/* <Match when={block.tag === "bullet_list"}> */}
-      {/* </Match> */}
-      {/* <Match when={block.tag === "list_item"}> */}
-      {/* </Match> */}
-      {/* <Match when={true}> */}
-      {/*   <box></box> */}
-      {/* </Match> */}
-    </Switch>
+      <Match when={block.tag === "thematic_break"}>
+        <text fg={colors.dark.border} marginTop={1} alignSelf="center"
+        >{"─".repeat((dim.width * 0.86) | 0)}</text>
+      </Match>
+      <Match when={block.tag === "code_block"}>
+        <box
+          marginTop={2}
+          marginBottom={1}
+          paddingTop={1}
+          paddingLeft={2}
+          paddingRight={2}
+          backgroundColor="#323232">
+          <code
+            fg={syntaxColors.dark.white}
+            content={(block as CodeBlock).text}
+            filetype={(block as CodeBlock).lang}
+            syntaxStyle={tui.syntax.dark}
+          />
+        </box>
+      </Match>
+      <Match when={block.tag === "bullet_list"}>
+        <ListNode list={block as BulletList} kind="-" listNest={false} />
+      </Match>
+      <Match when={block.tag === "ordered_list"}>
+        <ListNode list={block as OrderedList} kind="1" listNest={false} />
+      </Match>
+      <Match when={block.tag === "raw_block"}>
+        <Show when={(block as RawBlock).format === "tui"}>
+          <text fg="#000000" bg="#00ff00">{(block as RawBlock).text}</text>
+        </Show>
+      </Match>
+      <Match when={true}>
+        <box><text bg="#0000ff">{block.tag}</text></box>
+      </Match>
+    </Switch >
   );
 }
 
-export default function Blog() {
+export default function Blog(props: { width: number, height: number }) {
+  const { width, height } = props;
+  const dim: Size = { width, height };
   const ast = parse(blogPageStr);
-  const [getMetadata, setMetadata] = createSignal<PostMetadata>({});
-  console.log("parsed ast");
+  for (const f in ast.footnotes){
+    console.log(f, ast.footnotes[f].children)
+  }
   return (
     <box paddingTop={2} paddingBottom={1} paddingLeft={3} paddingRight={3}>
       <box rowGap={1}>
-        <ascii_font color={[syntaxColors.dark.orange, syntaxColors.dark.red]} text="Building Static Sites" font="tiny" />
-        <ascii_font text="with Neovim" font="tiny" />
+        <ascii_font color={syntaxColors.dark.off_white} text="Building Static Sites" font="tiny" />
+        <ascii_font color={syntaxColors.dark.off_white} text="with Neovim" font="tiny" />
+        <text fg={colors.dark.dim} attributes={TextAttributes.ITALIC}
+        >April 9th 2025</text>
       </box>
-      <BlockNodes blocks={ast.children} />
+      <BlockNodes blocks={ast.children} dim={dim} />
     </box>
   );
 }
