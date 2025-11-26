@@ -1,18 +1,19 @@
 import { TextAttributes } from "@opentui/core";
 import { render, useKeyboard, useRenderer, useTerminalDimensions } from "@opentui/solid";
-import { createEffect, createSignal, Match, onMount, Show, Switch } from "solid-js";
+import { createSignal, Match, onMount, Show, Switch } from "solid-js";
 
 import Home from "./components/Home";
 import Blog from "./components/Blog";
+import Debug from "./components/Debug";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import Contact from "./components/Contact";
 
 const TABS = [
-  { name: "home", scene: "home", description: "home desc", keys: [{ bind: "b", desc: "somet" }] },
-  { name: "blog", scene: "blog", description: "blog desc", keys: [{ bind: "2", desc: "blog key" }] },
-  { name: "resume", scene: "resume", description: "resume desc", keys: [] },
-  { name: "contact", scene: "contact", description: "contact desc", keys: [] },
+  { name: "home", description: "home desc", keys: [{ bind: "b", desc: "somet" }] },
+  { name: "blog", description: "blog desc", keys: [{ bind: "2", desc: "blog key" }] },
+  { name: "resume", description: "resume desc", keys: [] },
+  { name: "contact", description: "contact desc", keys: [] },
 ];
 
 export default function App() {
@@ -26,7 +27,8 @@ export default function App() {
   const contentHeight = () => {
     const real = dimensions().height;
     if (real <= 30) return 24;
-    return Math.min(real, 42) - 8;
+    if (real <= 42) return real - 8;
+    return Math.min(real, 54) - 8;
   };
   const contentWidth = () => {
     const real = dimensions().width;
@@ -57,8 +59,11 @@ export default function App() {
       case "c":
         setActiveTab(3);
         break;
+      // case "d":
+      //   if (activeTab() == 4) { setActiveTab(0); } else { setActiveTab(4); }
+      //   break;
       case "left":
-        setActiveTab((prev) => (Math.max(prev - 1, 0)));
+        setActiveTab((prev) => (prev === 0 ? TABS.length - 1 : prev - 1));
         break;
       case "right":
         setActiveTab((prev) => ((prev + 1) % TABS.length));
@@ -73,7 +78,7 @@ export default function App() {
     return (
       <box alignItems="center">
         <text marginBottom={1}>Your terminal is too small!</text>
-        <text attributes={TextAttributes.DIM}>{dimensions().width}x{dimensions().height} {"<"} 80x30</text>
+        <text attributes={TextAttributes.DIM}>{dimensions().width}x{dimensions().height} {"&lt;"} 80x30</text>
       </box>
     );
   };
@@ -89,7 +94,7 @@ export default function App() {
             </Match>
             <Match when={activeTab() == 1}>
               <scrollbox>
-                <Blog width={contentWidth()} height={contentHeight()}/>
+                <Blog width={contentWidth()} height={contentHeight()} />
               </scrollbox>
             </Match>
             <Match when={activeTab() == 2}>
@@ -97,6 +102,9 @@ export default function App() {
             </Match>
             <Match when={activeTab() == 3}>
               <Contact />
+            </Match>
+            <Match when={activeTab() == 4}>
+              <Debug />
             </Match>
           </Switch>
         </box>

@@ -1,4 +1,3 @@
-import { TextAttributes } from "@opentui/core";
 import { For, type Setter, type Accessor } from "solid-js";
 import { colors } from "../lib/theme";
 

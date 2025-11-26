@@ -1,10 +1,11 @@
-import { For, Match, Show, Switch } from "solid-js";
+import { createSignal, For, Match, Show, Switch } from "solid-js";
 import { tui, colors, syntaxColors } from "../lib/theme";
 import {
   type BulletList,
   type Delete,
   parse, type Heading, type Inline, type Para, type CodeBlock, type OrderedList, type RawBlock, type Str, type Verbatim, type Block, type Section, type Emph, type SmartPunctuation, type Link, type DoubleQuoted,
-  type Strong } from "@djot/djot";
+  type Strong
+} from "@djot/djot";
 import { TextAttributes } from "@opentui/core";
 
 interface PostMetadata {
@@ -31,12 +32,10 @@ template = post,base
 
 I enjoy having a personal website.
 
----
-
 I don't enjoy Javascript front-end frameworks, especially for a site that's mostly static.
 I previously used Sveltekit for this site, and while it was nice, I've been wanting to move to something simpler.
 
-A couple of blogs I follow [^djot-blogs] have mentioned they use custom site
+A couple of blogs I follow[^djot-blogs] have mentioned they use custom site
 generators built around [Djot](https://djot.net), which got me interested in creating my own.
 At first I wanted to write my own Djot parser, to make highlighting code
 blocks easier (and better), but I dropped it a few hours in after it became unfun.
@@ -178,8 +177,7 @@ Changing a template in watch mode will trigger a re-render for all pages that us
 
 ## Closing Thoughts
 
-Even though it started out as a meme idea: _"What if I used nvim to build my website"_,\
-I'm actually really enjoying the workflow I've got setup.
+Even though it started out as a meme idea: _"What if I used nvim to build my website"_, I'm actually really enjoying the workflow I've got setup.
 
     * All the tooling is inside my editor, so I can easily create keybinds for custom actions.
     * The code highlighting is accurate because it uses treesitter[^bad-hl] and not a bunch of regexes.
@@ -195,6 +193,20 @@ Thanks for reading!
 
 `;
 
+const superscript = ["⁰", "¹", "²", "³", "⁴", "⁵", "⁶", "⁷", "⁸", "⁹"]
+function toSuperscript(n: number): string {
+  const digits = [];
+  while (n > 0) {
+    digits.push(superscript[n % 10]);
+    n = (n / 10) | 0;
+  }
+
+  return digits.reverse().join("");
+}
+
+// todo might not need this to be a signal
+const [getFootnotes, setFootnotes] = createSignal<string[]>([]);
+
 const punctuation = {
   left_single_quote: "'",
   right_single_quote: "'",
@@ -204,11 +216,18 @@ const punctuation = {
   em_dash: "—",
   en_dash: "–",
 };
-
 function InlineNode(props: { inline: Inline }) {
   const { inline } = props;
+  let fnRefCount = 0;
   if (inline.tag == "footnote_reference") {
-    console.log(inline);
+    const footnotes = getFootnotes();
+    const idx = footnotes.findIndex((fn) => fn === inline.text);
+    if (idx === -1) {
+      fnRefCount = footnotes.push(inline.text);
+      // setFootnotes(footnotes)
+    } else {
+      fnRefCount = idx + 1;
+    }
   }
   return (
     <Switch>
@@ -217,10 +236,11 @@ function InlineNode(props: { inline: Inline }) {
       </Match>
       <Match when={inline.tag === "verbatim"} >
         <span style={{ bg: "#323232", fg: syntaxColors.dark.green, bold: true }}
-        >{(inline as Verbatim).text}</span>
+        >{" " + (inline as Verbatim).text + " "}</span>
       </Match>
       <Match when={inline.tag === "link"}>
-        <InlineNodes inline={(inline as Link).children} />
+        {/* todo: these aren't working, dont feel like debugging them */}
+        <span style={{ underline: true }}><InlineNodes inline={(inline as Link).children} /></span>
       </Match>
       <Match when={inline.tag === "smart_punctuation"}>
         {punctuation[(inline as SmartPunctuation).type]}
@@ -247,8 +267,9 @@ function InlineNode(props: { inline: Inline }) {
       <Match when={inline.tag === "single_quoted"}>
         {"'"}<InlineNodes inline={(inline as DoubleQuoted).children} />{"'"}
       </Match>
-      {/* <Match when={inline.tag === "footnote_reference"}> */}
-      {/* </Match> */}
+      <Match when={inline.tag === "footnote_reference"}>
+        {toSuperscript(fnRefCount)}
+      </Match>
       <Match when={true}>
         <span style={{ bg: "#ff0000" }}>{inline.tag}</span>
       </Match>
@@ -271,10 +292,15 @@ function InlineNodes(props: {
 function BlockNodes(props: { blocks: Block[], dim: Size }) {
   return (
     <For each={props.blocks} fallback={<text>BAD BLOCKS</text>}>{(b) => (
-      <BlockNode block={b} dim={props.dim}/>
+      <BlockNode block={b} dim={props.dim} />
     )}
     </For>
   );
+}
+
+function Hr(props: { width: number }) {
+  return (<text fg={colors.dark.border} marginTop={1} alignSelf="center"
+  >{"─".repeat((props.width * 0.86) | 0)}</text>);
 }
 
 function ListNode(props: {
@@ -326,8 +352,7 @@ function BlockNode(props: { block: Block, dim: Size }) {
         </text>
       </Match>
       <Match when={block.tag === "thematic_break"}>
-        <text fg={colors.dark.border} marginTop={1} alignSelf="center"
-        >{"─".repeat((dim.width * 0.86) | 0)}</text>
+        <Hr width={dim.width} />
       </Match>
       <Match when={block.tag === "code_block"}>
         <box
@@ -367,9 +392,6 @@ export default function Blog(props: { width: number, height: number }) {
   const { width, height } = props;
   const dim: Size = { width, height };
   const ast = parse(blogPageStr);
-  for (const f in ast.footnotes){
-    console.log(f, ast.footnotes[f].children)
-  }
   return (
     <box paddingTop={2} paddingBottom={1} paddingLeft={3} paddingRight={3}>
       <box rowGap={1}>
@@ -379,6 +401,16 @@ export default function Blog(props: { width: number, height: number }) {
         >April 9th 2025</text>
       </box>
       <BlockNodes blocks={ast.children} dim={dim} />
+      <Hr width={dim.width} />
+      {/* just assume fns only contain a single para */}
+      <For each={getFootnotes()}>{(fn, idx) => {
+        const para = ast.footnotes[fn]?.children[0] as Para;
+        const fnRef = idx() + 1;
+        return (
+          <text id={`fn${fnRef}`} marginTop={1}>{`${fnRef}. `}<InlineNodes inline={para.children} /></text>
+        );
+      }}
+      </For>
     </box>
   );
 }
