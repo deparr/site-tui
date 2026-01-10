@@ -16,8 +16,8 @@
     "@babel/core": "^7.28.5",
     "@babel/preset-typescript": "^7.28.5",
     "@djot/djot": "^0.3.2",
-    "@opentui/core": "^0.1.50",
-    "@opentui/solid": "^0.1.50",
+    "@opentui/core": "^0.1.72",
+    "@opentui/solid": "^0.1.72",
     "babel-preset-solid": "^1.9.10",
     "solid-js": "^1.9.10",
     "web-tree-sitter": "^0.25.10"
